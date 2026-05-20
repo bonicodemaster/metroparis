@@ -140,12 +140,13 @@ export default function NameToPositionPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative flex-1 min-h-[65vh]">
-        <div className="absolute top-4 left-4 right-4 z-10 bg-cream/90 backdrop-blur rounded-xl px-4 py-3 shadow-soft text-center">
-          <p className="text-xs uppercase tracking-wider text-ink-muted">Où se trouve</p>
-          <h2 className="text-2xl font-extrabold text-ink">{current?.name}</h2>
-        </div>
+      {/* Bandeau cible — sticky au-dessus de la carte */}
+      <div className="sticky top-14 z-20 bg-cream/95 backdrop-blur rounded-2xl shadow-soft border border-black/5 px-4 py-3 text-center">
+        <p className="text-xs uppercase tracking-wider text-ink-muted">Où se trouve</p>
+        <h2 className="text-2xl font-extrabold text-ink">{current?.name}</h2>
+      </div>
 
+      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative flex-1 min-h-[65vh]">
         <MetroMap
           highlightedLines={lineFilter.length ? lineFilter : undefined}
           labels="none"

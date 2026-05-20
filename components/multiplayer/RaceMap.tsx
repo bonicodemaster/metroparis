@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { motion } from "framer-motion";
 import { stationsById } from "@/lib/data/stations";
 import { lines as allLines, linesById } from "@/lib/data/lines";
 import type { LineId } from "@/lib/data/types";
 import type { PlayerState } from "@/lib/multiplayer/types";
 import { project, SVG_VIEWBOX } from "@/lib/map-engine/projection";
 import { getOrderedStations } from "@/lib/multiplayer/useRoom";
+import { PlayerTrain } from "./PlayerTrain";
 
 interface RaceMapProps {
   lineId: LineId;
@@ -163,30 +163,19 @@ export function RaceMap({
           )
       )}
 
-      {/* ── Trains des joueurs ────────────────────────────────────── */}
+      {/* ── Mini-métros 3D des joueurs ────────────────────────────── */}
       {players.map((p) => {
         const pos = playerPos(p);
         return (
-          <motion.g
+          <PlayerTrain
             key={p.id}
-            initial={false}
-            animate={{ x: pos.x, y: pos.y }}
-            transition={{ type: "spring", stiffness: 180, damping: 24 }}
-          >
-            <circle r={14} fill={p.color} opacity={0.18} />
-            <circle r={9} fill={p.color} stroke="#FFFFFF" strokeWidth={2} />
-            <text
-              y={-16}
-              fontSize={11}
-              textAnchor="middle"
-              fill="#0B0F1A"
-              style={{ paintOrder: "stroke", stroke: "#FAF8F3", strokeWidth: 3 }}
-              className="font-bold"
-            >
-              {p.id === selfId ? "▶ " : ""}
-              {p.name}
-            </text>
-          </motion.g>
+            x={pos.x}
+            y={pos.y}
+            color={p.color}
+            name={p.name}
+            isSelf={p.id === selfId}
+            finished={!!p.finishedAt}
+          />
         );
       })}
     </svg>

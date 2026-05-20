@@ -104,7 +104,7 @@ export default function PositionToNamePage() {
   }, [foundCount, revealedIds.size, totalCount, phase]);
 
   const submit = (raw?: string) => {
-    if (phase !== "playing" || feedback) return;
+    if (phase !== "playing") return;
     const value = (raw ?? answer).trim();
     if (!value) return;
 
@@ -124,6 +124,7 @@ export default function PositionToNamePage() {
         setFoundIds((prev) => new Set(prev).add(currentStation.id));
         answerStation(currentStation.id, elapsed < 4000 ? 3 : 2);
         setFeedback({ kind: "ok", text: `✓ ${currentStation.name}` });
+        startedAt.current = performance.now();
       } else {
         setStreak(0);
         setWrongAttempts((n) => n + 1);
@@ -166,13 +167,15 @@ export default function PositionToNamePage() {
       }
     }
 
-    setTimeout(() => {
-      setFeedback(null);
-      setAnswer("");
-      if (fillMode === "ordered") {
-        startedAt.current = performance.now();
-      }
-    }, 800);
+    setAnswer("");
+    setTimeout(() => setFeedback(null), 1000);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit();
+    }
   };
 
   const skipCurrent = () => {
@@ -180,11 +183,10 @@ export default function PositionToNamePage() {
     setRevealedIds((prev) => new Set(prev).add(currentStation.id));
     setStreak(0);
     setFeedback({ kind: "ko", text: `→ ${currentStation.name}` });
-    setTimeout(() => {
-      setFeedback(null);
-      setAnswer("");
-      startedAt.current = performance.now();
-    }, 1000);
+    setAnswer("");
+    startedAt.current = performance.now();
+    setTimeout(() => setFeedback(null), 1000);
+    inputRef.current?.focus({ preventScroll: true });
   };
 
   const revealAll = () => {
@@ -360,40 +362,27 @@ export default function PositionToNamePage() {
         />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative flex-1 min-h-[55vh]">
-        {/* Bandeau du haut (mode ordonné) */}
-        {fillMode === "ordered" && currentStation && (
-          <div className="absolute top-4 left-4 right-4 z-10 bg-cream/90 backdrop-blur rounded-xl px-4 py-3 shadow-soft text-center">
-            <p className="text-xs uppercase tracking-wider text-ink-muted">
-              Station n°{lineStations.indexOf(currentStation) + 1}
+      {/* Input — sticky en haut pour rester accessible quand on scroll */}
+      <div className="sticky top-14 z-20 bg-cream/95 backdrop-blur rounded-2xl shadow-soft border border-black/5 relative">
+        <div className="px-4 pt-3 pb-1 border-b border-black/5">
+          {fillMode === "ordered" && currentStation && (
+            <p className="text-xs uppercase tracking-wider text-ink-muted text-center">
+              Station n°{lineStations.indexOf(currentStation) + 1} — Quel est son nom ?
             </p>
-            <p className="text-sm text-ink-muted">
-              Quel est le nom de la station en surbrillance ?
+          )}
+          {fillMode === "free" && (
+            <p className="text-xs uppercase tracking-wider text-ink-muted text-center">
+              Stations trouvées : {foundCount} / {totalCount}
             </p>
-          </div>
-        )}
+          )}
+        </div>
 
-        <MetroMap
-          highlightedLines={selectedLine ? [selectedLine] : undefined}
-          labels="none"
-          focusStationId={fillMode === "ordered" ? currentStation?.id ?? null : null}
-          correctStationIds={foundIds}
-          wrongStationIds={wrongSetForMap}
-        />
-      </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit();
-        }}
-        className="bg-white rounded-2xl shadow-soft border border-black/5 relative"
-      >
         <div className="flex items-center gap-2 p-2">
           <input
             ref={inputRef}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={
               fillMode === "ordered"
                 ? "Tape le nom de cette station…"
@@ -401,8 +390,10 @@ export default function PositionToNamePage() {
             }
             className="flex-1 px-3 py-3 bg-transparent text-lg focus:outline-none"
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
             spellCheck={false}
-            disabled={!!feedback}
+            enterKeyHint="send"
           />
           {fillMode === "ordered" ? (
             <button
@@ -442,7 +433,17 @@ export default function PositionToNamePage() {
             </motion.div>
           )}
         </AnimatePresence>
-      </form>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative flex-1 min-h-[55vh]">
+        <MetroMap
+          highlightedLines={selectedLine ? [selectedLine] : undefined}
+          labels="none"
+          focusStationId={fillMode === "ordered" ? currentStation?.id ?? null : null}
+          correctStationIds={foundIds}
+          wrongStationIds={wrongSetForMap}
+        />
+      </div>
 
       <StationsTable
         stations={lineStations}
