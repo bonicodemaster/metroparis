@@ -68,8 +68,7 @@ function RoomContent({
     if (room.phase === "playing") inputRef.current?.focus();
   }, [room.phase]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = () => {
     if (!answer.trim()) return;
     const r = submitAnswer(answer);
     setAnswer("");
@@ -77,8 +76,15 @@ function RoomContent({
     else if (r.kind === "won") setFeedback({ kind: "won", text: `🏁 ${r.name} — Terminé !` });
     else setFeedback({ kind: "ko", text: r.reason ? `✗ ${r.reason}` : "✗" });
     setTimeout(() => setFeedback(null), 1200);
-    // Garde le focus sans déclencher de scroll automatique vers l'input.
-    inputRef.current?.focus({ preventScroll: true });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      // On empêche le comportement par défaut (qui blur l'input sur mobile)
+      // et on traite la réponse manuellement — l'input garde son focus.
+      e.preventDefault();
+      submit();
+    }
   };
 
   const playersArray = useMemo(
@@ -150,10 +156,7 @@ function RoomContent({
       </div>
 
       {/* Input — sticky en haut pour rester accessible quand on scroll */}
-      <form
-        onSubmit={handleSubmit}
-        className="sticky top-14 z-20 bg-cream/95 backdrop-blur rounded-2xl shadow-soft border border-black/5 relative"
-      >
+      <div className="sticky top-14 z-20 bg-cream/95 backdrop-blur rounded-2xl shadow-soft border border-black/5 relative">
         {/* Indicateur cible / compteur intégré dans la barre */}
         <div className="px-4 pt-3 pb-1 border-b border-black/5">
           {room.config.mode === "line-order" && target && (
@@ -173,6 +176,7 @@ function RoomContent({
             ref={inputRef}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={
               self?.finishedAt
                 ? "Tu as terminé ! Bravo 🎉"
@@ -205,7 +209,7 @@ function RoomContent({
             </motion.div>
           )}
         </AnimatePresence>
-      </form>
+      </div>
 
       {/* Carte */}
       <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative min-h-[45vh]">
