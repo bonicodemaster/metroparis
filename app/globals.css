@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAF8F3;
+  --fg: #0B0F1A;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Carte SVG — interactions */
+.station-dot {
+  cursor: pointer;
+  transition: r 120ms ease, stroke-width 120ms ease, filter 120ms ease;
+}
+.station-dot:hover {
+  filter: drop-shadow(0 0 6px rgba(0,0,0,0.25));
+}
+
+.line-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 200ms ease, stroke-width 200ms ease;
+}
+
+.dimmed { opacity: 0.12; }
+
+/* Scrollbar discret */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
