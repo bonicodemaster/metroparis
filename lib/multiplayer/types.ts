@@ -39,7 +39,7 @@ export interface RoomState {
 export type MpEvent =
   | { type: "presence:hello"; player: PlayerState }
   | { type: "presence:bye"; playerId: string }
-  | { type: "presence:heartbeat"; playerId: string; at: number }
+  | { type: "presence:heartbeat"; player: PlayerState }
   | { type: "snapshot:request"; from: string }
   | { type: "snapshot:response"; to: string; room: RoomState }
   | { type: "room:config"; config: RoomConfig }

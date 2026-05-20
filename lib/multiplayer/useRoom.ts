@@ -141,7 +141,13 @@ export function useRoom({ code, identity, asHost }: UseRoomOptions): UseRoomRetu
   // ─── Heartbeat + cleanup des joueurs absents ───
   useEffect(() => {
     const id = setInterval(() => {
-      send({ type: "presence:heartbeat", playerId: identity.id, at: Date.now() });
+      const me = roomRef.current.players[identity.id];
+      if (me) {
+        send({
+          type: "presence:heartbeat",
+          player: { ...me, lastSeenAt: Date.now() },
+        });
+      }
 
       setRoom((cur) => {
         const now = Date.now();
@@ -425,11 +431,33 @@ function reduceEvent(state: RoomState, e: MpEvent, selfId: string): RoomState {
       return { ...state, players, hostId };
     }
     case "presence:heartbeat": {
-      const p = state.players[e.playerId];
-      if (!p) return state;
+      const incoming = e.player;
+      if (incoming.id === selfId) return state;
+      const existing = state.players[incoming.id];
+      // Si on ne connaissait pas ce joueur (presence:hello raté à la connexion),
+      // on le récupère via le heartbeat. Sinon, on conserve notre vue locale
+      // de sa progression (qui peut être plus à jour que l'heartbeat lui-même
+      // si on a reçu des player:answer entre-temps), on met juste à jour
+      // lastSeenAt et les métadonnées d'identité.
+      if (!existing) {
+        return {
+          ...state,
+          players: { ...state.players, [incoming.id]: { ...incoming, lastSeenAt: Date.now() } },
+        };
+      }
       return {
         ...state,
-        players: { ...state.players, [e.playerId]: { ...p, lastSeenAt: e.at } },
+        players: {
+          ...state.players,
+          [incoming.id]: {
+            ...existing,
+            name: incoming.name,
+            color: incoming.color,
+            isHost: incoming.isHost,
+            ready: incoming.ready,
+            lastSeenAt: Date.now(),
+          },
+        },
       };
     }
     case "snapshot:response": {
