@@ -70,14 +70,15 @@ function RoomContent({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!answer.trim() || feedback) return;
+    if (!answer.trim()) return;
     const r = submitAnswer(answer);
     setAnswer("");
     if (r.kind === "ok") setFeedback({ kind: "ok", text: `✓ ${r.name}` });
     else if (r.kind === "won") setFeedback({ kind: "won", text: `🏁 ${r.name} — Terminé !` });
     else setFeedback({ kind: "ko", text: r.reason ? `✗ ${r.reason}` : "✗" });
-    setTimeout(() => setFeedback(null), 800);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    setTimeout(() => setFeedback(null), 1200);
+    // Garde le focus sans déclencher de scroll automatique vers l'input.
+    inputRef.current?.focus({ preventScroll: true });
   };
 
   const playersArray = useMemo(
@@ -148,39 +149,25 @@ function RoomContent({
         </div>
       </div>
 
-      {/* Carte */}
-      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative min-h-[45vh]">
-        <RaceMap
-          lineId={room.config.lineId}
-          players={playersArray}
-          selfId={selfId}
-          hideUnknownNames
-        />
-
-        {/* Bandeau cible (mode line-order) */}
-        {room.config.mode === "line-order" && target && (
-          <div className="absolute top-3 left-3 right-3 bg-cream/90 backdrop-blur rounded-xl px-4 py-3 shadow-soft text-center">
-            <p className="text-xs uppercase tracking-wider text-ink-muted">
-              Prochaine station ({(self?.currentStationIndex ?? 0) + 1} / {totalStations})
-            </p>
-            <p className="text-sm text-ink-muted">À toi de la deviner — tape son nom</p>
-          </div>
-        )}
-        {room.config.mode === "free-order" && (
-          <div className="absolute top-3 left-3 right-3 bg-cream/90 backdrop-blur rounded-xl px-4 py-3 shadow-soft text-center">
-            <p className="text-xs uppercase tracking-wider text-ink-muted">
-              Stations trouvées : {self?.foundStationIds.length ?? 0} / {totalStations}
-            </p>
-            <p className="text-sm text-ink-muted">Tape n'importe quelle station de la ligne</p>
-          </div>
-        )}
-      </div>
-
-      {/* Input */}
+      {/* Input — sticky en haut pour rester accessible quand on scroll */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl shadow-soft border border-black/5 relative"
+        className="sticky top-14 z-20 bg-cream/95 backdrop-blur rounded-2xl shadow-soft border border-black/5 relative"
       >
+        {/* Indicateur cible / compteur intégré dans la barre */}
+        <div className="px-4 pt-3 pb-1 border-b border-black/5">
+          {room.config.mode === "line-order" && target && (
+            <p className="text-xs uppercase tracking-wider text-ink-muted text-center">
+              Prochaine station ({(self?.currentStationIndex ?? 0) + 1} / {totalStations})
+            </p>
+          )}
+          {room.config.mode === "free-order" && (
+            <p className="text-xs uppercase tracking-wider text-ink-muted text-center">
+              Stations trouvées : {self?.foundStationIds.length ?? 0} / {totalStations}
+            </p>
+          )}
+        </div>
+
         <div className="flex items-center gap-2 p-2">
           <input
             ref={inputRef}
@@ -193,8 +180,11 @@ function RoomContent({
             }
             className="flex-1 px-3 py-3 bg-transparent text-lg focus:outline-none disabled:opacity-50"
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
             spellCheck={false}
-            disabled={!!feedback || !!self?.finishedAt}
+            enterKeyHint="send"
+            disabled={!!self?.finishedAt}
           />
         </div>
 
@@ -216,6 +206,16 @@ function RoomContent({
           )}
         </AnimatePresence>
       </form>
+
+      {/* Carte */}
+      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative min-h-[45vh]">
+        <RaceMap
+          lineId={room.config.lineId}
+          players={playersArray}
+          selfId={selfId}
+          hideUnknownNames
+        />
+      </div>
 
       {/* Tableau de progression */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
