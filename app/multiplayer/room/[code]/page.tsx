@@ -141,7 +141,7 @@ function RoomContent({
       : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col gap-3">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col gap-2 h-[calc(100dvh-56px)]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <LineBadge id={room.config.lineId} size="md" />
@@ -214,14 +214,14 @@ function RoomContent({
       </div>
 
       {/* Carte avec overlay de course en haut à gauche */}
-      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative h-[42vh] min-h-[280px]">
+      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative flex-1 min-h-[320px]">
         <RaceMap
           lineId={room.config.lineId}
           players={playersArray}
           selfId={selfId}
           hideUnknownNames
         />
-        <div className="absolute top-2 left-2 z-10 w-[210px] sm:w-[240px] pointer-events-none">
+        <div className="absolute top-2 left-2 z-10 w-[260px] sm:w-[300px] lg:w-[340px] pointer-events-none">
           <RaceTrack
             players={playersArray}
             selfId={selfId}

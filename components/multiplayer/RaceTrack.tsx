@@ -26,11 +26,11 @@ export function RaceTrack({
   lineColor,
   compact = false,
 }: RaceTrackProps) {
-  const ROW_H = compact ? 26 : 56;
-  const PAD_X = compact ? 48 : 60;
-  const TRACK_W = compact ? 200 : 800;
-  const VIEW_W = TRACK_W + PAD_X * 2 + (compact ? 36 : 60);
-  const railW = compact ? 4 : 6;
+  const ROW_H = compact ? 32 : 56;
+  const PAD_X = compact ? 56 : 60;
+  const TRACK_W = compact ? 260 : 800;
+  const VIEW_W = TRACK_W + PAD_X * 2 + (compact ? 42 : 60);
+  const railW = compact ? 5 : 6;
   const stationXs = useMemo(() => {
     if (totalStations <= 1) return [PAD_X + TRACK_W / 2];
     const step = TRACK_W / (totalStations - 1);
@@ -69,7 +69,7 @@ export function RaceTrack({
         viewBox={`0 0 ${VIEW_W} ${viewH}`}
         className="w-full"
         preserveAspectRatio="xMidYMid meet"
-        style={{ maxHeight: compact ? 140 : 220 }}
+        style={{ maxHeight: compact ? 180 : 220 }}
       >
         {players.map((p, rowIdx) => {
           const y = rowIdx * ROW_H + ROW_H / 2 + (compact ? 2 : 4);
@@ -146,9 +146,9 @@ export function RaceTrack({
 
               {/* Nom du joueur, aligné à gauche */}
               <text
-                x={PAD_X - (compact ? 6 : 10)}
-                y={y + (compact ? 3 : 4)}
-                fontSize={compact ? 9 : 12}
+                x={PAD_X - (compact ? 8 : 10)}
+                y={y + (compact ? 4 : 4)}
+                fontSize={compact ? 11 : 12}
                 textAnchor="end"
                 fill={p.id === selfId ? "#0B0F1A" : "#475569"}
                 style={{
@@ -159,14 +159,14 @@ export function RaceTrack({
                 className="font-bold"
               >
                 {p.id === selfId ? "▶ " : ""}
-                {compact && p.name.length > 8 ? p.name.slice(0, 7) + "…" : p.name}
+                {compact && p.name.length > 9 ? p.name.slice(0, 8) + "…" : p.name}
               </text>
 
               {/* Compteur à droite */}
               <text
-                x={PAD_X + TRACK_W + (compact ? 10 : 14)}
-                y={y + (compact ? 3 : 4)}
-                fontSize={compact ? 9 : 11}
+                x={PAD_X + TRACK_W + (compact ? 12 : 14)}
+                y={y + (compact ? 4 : 4)}
+                fontSize={compact ? 10 : 11}
                 fill="#475569"
                 className="font-semibold"
               >
@@ -183,7 +183,7 @@ export function RaceTrack({
                 isSelf={p.id === selfId}
                 finished={!!p.finishedAt}
                 hideLabel
-                scale={compact ? 0.55 : 1}
+                scale={compact ? 0.7 : 1}
               />
             </g>
           );
