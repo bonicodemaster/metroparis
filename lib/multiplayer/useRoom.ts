@@ -218,9 +218,9 @@ export function useRoom({ code, identity, asHost }: UseRoomOptions): UseRoomRetu
       if (!isHost) return;
       const next = { ...roomRef.current.config, ...cfg };
       setRoom((cur) => ({ ...cur, config: next }));
-      send({ type: "room:config", config: next });
+      send({ type: "room:config", from: identity.id, config: next });
     },
-    [isHost, send]
+    [isHost, send, identity.id]
   );
 
   const toggleReady = useCallback(() => {
@@ -264,8 +264,8 @@ export function useRoom({ code, identity, asHost }: UseRoomOptions): UseRoomRetu
         ])
       ),
     }));
-    send({ type: "game:start", countdownEndsAt });
-  }, [isHost, send]);
+    send({ type: "game:start", from: identity.id, countdownEndsAt });
+  }, [isHost, send, identity.id]);
 
   const resetGame = useCallback(() => {
     if (!isHost) return;
@@ -282,8 +282,8 @@ export function useRoom({ code, identity, asHost }: UseRoomOptions): UseRoomRetu
         ])
       ),
     }));
-    send({ type: "game:reset" });
-  }, [isHost, send]);
+    send({ type: "game:reset", from: identity.id });
+  }, [isHost, send, identity.id]);
 
   const submitAnswer = useCallback(
     (raw: string): { kind: "ok" | "ko" | "won"; name?: string; reason?: string } => {
@@ -472,6 +472,8 @@ function reduceEvent(state: RoomState, e: MpEvent, selfId: string): RoomState {
     case "snapshot:request":
       return state;
     case "room:config":
+      // Garde : seul le host peut changer la config de la room.
+      if (e.from !== state.hostId) return state;
       return { ...state, config: e.config };
     case "player:ready": {
       const p = state.players[e.playerId];
@@ -490,6 +492,7 @@ function reduceEvent(state: RoomState, e: MpEvent, selfId: string): RoomState {
       };
     }
     case "game:start":
+      if (e.from !== state.hostId) return state;
       return {
         ...state,
         phase: "countdown",
@@ -530,6 +533,7 @@ function reduceEvent(state: RoomState, e: MpEvent, selfId: string): RoomState {
       if (state.winnerId) return state; // déjà décidé
       return { ...state, winnerId: e.winnerId, phase: "finished" };
     case "game:reset":
+      if (e.from !== state.hostId) return state;
       return {
         ...state,
         phase: "lobby",

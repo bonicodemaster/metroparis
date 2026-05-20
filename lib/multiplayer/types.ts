@@ -42,10 +42,10 @@ export type MpEvent =
   | { type: "presence:heartbeat"; player: PlayerState }
   | { type: "snapshot:request"; from: string }
   | { type: "snapshot:response"; to: string; room: RoomState }
-  | { type: "room:config"; config: RoomConfig }
+  | { type: "room:config"; from: string; config: RoomConfig }
   | { type: "player:ready"; playerId: string; ready: boolean }
   | { type: "player:rename"; playerId: string; name: string }
-  | { type: "game:start"; countdownEndsAt: number }
+  | { type: "game:start"; from: string; countdownEndsAt: number }
   | {
       type: "player:answer";
       playerId: string;
@@ -56,4 +56,4 @@ export type MpEvent =
     }
   | { type: "player:error"; playerId: string; errors: number }
   | { type: "game:finish"; winnerId: string }
-  | { type: "game:reset" };
+  | { type: "game:reset"; from: string };

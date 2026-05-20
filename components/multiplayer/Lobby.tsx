@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { PlayerAvatar } from "./PlayerAvatar";
 import { LineBadge } from "@/components/LineBadge";
-import { lines } from "@/lib/data/lines";
+import { lines, linesById } from "@/lib/data/lines";
 import type { LineId } from "@/lib/data/types";
 import type { RoomState, GameMode } from "@/lib/multiplayer/types";
 import { cn } from "@/lib/utils/cn";
@@ -61,64 +61,85 @@ export function Lobby({ room, selfId, isHost, onSetConfig, onToggleReady, onStar
 
       {/* Config */}
       <div className="bg-white rounded-2xl p-5 border border-black/5 shadow-soft">
-        <h2 className="font-semibold text-ink mb-3">Configuration</h2>
-
-        <h3 className="text-xs uppercase tracking-wider text-ink-muted mb-2">Mode</h3>
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {(["line-order", "free-order"] as const).map((m) => (
-            <button
-              key={m}
-              disabled={!isHost}
-              onClick={() => onSetConfig({ mode: m })}
-              className={cn(
-                "text-left p-3 rounded-xl border transition",
-                room.config.mode === m
-                  ? "bg-ink text-cream border-ink"
-                  : "bg-white border-black/10 text-ink",
-                !isHost && "opacity-60 cursor-not-allowed"
-              )}
-            >
-              <p className="font-bold text-sm">
-                {m === "line-order" ? "Ligne dans l'ordre" : "Ordre libre"}
-              </p>
-              <p
-                className={cn(
-                  "text-xs mt-0.5",
-                  room.config.mode === m ? "text-cream/80" : "text-ink-muted"
-                )}
-              >
-                {m === "line-order"
-                  ? "Départ → terminus, dans l'ordre"
-                  : "Toutes les stations, ordre libre"}
-              </p>
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-ink">Configuration</h2>
+          {!isHost && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-black/5 text-ink-muted font-semibold">
+              lecture seule
+            </span>
+          )}
         </div>
 
-        <h3 className="text-xs uppercase tracking-wider text-ink-muted mb-2">Ligne</h3>
-        <div className="flex flex-wrap gap-2">
-          {lines.map((l) => {
-            const active = room.config.lineId === l.id;
-            return (
-              <button
-                key={l.id}
-                disabled={!isHost}
-                onClick={() => onSetConfig({ lineId: l.id as LineId })}
-                className={cn(
-                  "transition rounded-full",
-                  active ? "ring-2 ring-offset-2 ring-ink" : "opacity-70 hover:opacity-100",
-                  !isHost && "cursor-not-allowed"
-                )}
-                title={l.label}
-              >
-                <LineBadge id={l.id as LineId} size="md" />
-              </button>
-            );
-          })}
-        </div>
+        {isHost ? (
+          <>
+            <h3 className="text-xs uppercase tracking-wider text-ink-muted mb-2">Mode</h3>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {(["line-order", "free-order"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => onSetConfig({ mode: m })}
+                  className={cn(
+                    "text-left p-3 rounded-xl border transition",
+                    room.config.mode === m
+                      ? "bg-ink text-cream border-ink"
+                      : "bg-white border-black/10 text-ink hover:border-ink/40"
+                  )}
+                >
+                  <p className="font-bold text-sm">
+                    {m === "line-order" ? "Ligne dans l'ordre" : "Ordre libre"}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-xs mt-0.5",
+                      room.config.mode === m ? "text-cream/80" : "text-ink-muted"
+                    )}
+                  >
+                    {m === "line-order"
+                      ? "Départ → terminus, dans l'ordre"
+                      : "Toutes les stations, ordre libre"}
+                  </p>
+                </button>
+              ))}
+            </div>
 
-        {!isHost && (
-          <p className="text-xs text-ink-muted mt-3">Seul le host peut modifier les paramètres.</p>
+            <h3 className="text-xs uppercase tracking-wider text-ink-muted mb-2">Ligne</h3>
+            <div className="flex flex-wrap gap-2">
+              {lines.map((l) => {
+                const active = room.config.lineId === l.id;
+                return (
+                  <button
+                    key={l.id}
+                    onClick={() => onSetConfig({ lineId: l.id as LineId })}
+                    className={cn(
+                      "transition rounded-full",
+                      active ? "ring-2 ring-offset-2 ring-ink" : "opacity-70 hover:opacity-100"
+                    )}
+                    title={l.label}
+                  >
+                    <LineBadge id={l.id as LineId} size="md" />
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          // Vue read-only pour les non-hôtes
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-xs uppercase tracking-wider text-ink-muted w-14">Mode</span>
+              <span className="text-sm font-semibold text-ink">
+                {room.config.mode === "line-order" ? "Ligne dans l'ordre" : "Ordre libre"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs uppercase tracking-wider text-ink-muted w-14">Ligne</span>
+              <LineBadge id={room.config.lineId} size="md" />
+              <span className="text-sm text-ink">{linesById[room.config.lineId]?.label}</span>
+            </div>
+            <p className="text-xs text-ink-muted pt-1">
+              Seul le host peut modifier ces paramètres et lancer la partie.
+            </p>
+          </div>
         )}
       </div>
 
@@ -185,6 +206,12 @@ export function Lobby({ room, selfId, isHost, onSetConfig, onToggleReady, onStar
           </button>
         )}
       </div>
+
+      {!isHost && self?.ready && (
+        <p className="text-center text-sm text-ink-muted">
+          En attente du host pour lancer la partie…
+        </p>
+      )}
     </div>
   );
 }
