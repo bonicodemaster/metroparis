@@ -15,6 +15,7 @@ interface PlayerTrainProps {
   name: string;
   isSelf: boolean;
   finished?: boolean;
+  hideLabel?: boolean;
 }
 
 /** Renvoie un hex éclairci (+) ou assombri (-) en gardant la teinte. */
@@ -46,7 +47,7 @@ type TrailSeg = { id: number; x1: number; y1: number; x2: number; y2: number };
  * - Effet de vitesse (lignes de speed)
  * - Rebond léger à l'arrêt (spring avec overshoot)
  */
-export function PlayerTrain({ x, y, color, name, isSelf, finished }: PlayerTrainProps) {
+export function PlayerTrain({ x, y, color, name, isSelf, finished, hideLabel }: PlayerTrainProps) {
   const mx = useMotionValue(x);
   const my = useMotionValue(y);
   const angle = useMotionValue(0);
@@ -281,18 +282,20 @@ export function PlayerTrain({ x, y, color, name, isSelf, finished }: PlayerTrain
         </motion.g>
 
         {/* Étiquette nom (ne tourne pas) */}
-        <text
-          y={-18}
-          fontSize={11}
-          textAnchor="middle"
-          fill="#0B0F1A"
-          style={{ paintOrder: "stroke", stroke: "#FAF8F3", strokeWidth: 3 }}
-          className="font-bold"
-        >
-          {isSelf ? "▶ " : ""}
-          {name}
-          {finished ? " 🏁" : ""}
-        </text>
+        {!hideLabel && (
+          <text
+            y={-18}
+            fontSize={11}
+            textAnchor="middle"
+            fill="#0B0F1A"
+            style={{ paintOrder: "stroke", stroke: "#FAF8F3", strokeWidth: 3 }}
+            className="font-bold"
+          >
+            {isSelf ? "▶ " : ""}
+            {name}
+            {finished ? " 🏁" : ""}
+          </text>
+        )}
       </motion.g>
     </>
   );

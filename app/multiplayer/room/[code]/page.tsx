@@ -7,9 +7,11 @@ import { useIdentity } from "@/lib/multiplayer/identity";
 import { useRoom, getOrderedStations } from "@/lib/multiplayer/useRoom";
 import { Lobby } from "@/components/multiplayer/Lobby";
 import { RaceMap } from "@/components/multiplayer/RaceMap";
+import { RaceTrack } from "@/components/multiplayer/RaceTrack";
 import { PlayerProgressBar } from "@/components/multiplayer/PlayerProgressBar";
 import { VictoryScreen } from "@/components/multiplayer/VictoryScreen";
 import { LineBadge } from "@/components/LineBadge";
+import { linesById } from "@/lib/data/lines";
 import { cn } from "@/lib/utils/cn";
 
 export default function RoomPage() {
@@ -210,6 +212,14 @@ function RoomContent({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Bandeau course — animation des mini-métros */}
+      <RaceTrack
+        players={playersArray}
+        selfId={selfId}
+        totalStations={totalStations}
+        lineColor={linesById[room.config.lineId]?.color ?? "#0B0F1A"}
+      />
 
       {/* Carte */}
       <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative min-h-[45vh]">

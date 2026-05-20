@@ -7,7 +7,6 @@ import type { LineId } from "@/lib/data/types";
 import type { PlayerState } from "@/lib/multiplayer/types";
 import { project, SVG_VIEWBOX } from "@/lib/map-engine/projection";
 import { getOrderedStations } from "@/lib/multiplayer/useRoom";
-import { PlayerTrain } from "./PlayerTrain";
 
 interface RaceMapProps {
   lineId: LineId;
@@ -163,19 +162,22 @@ export function RaceMap({
           )
       )}
 
-      {/* ── Mini-métros 3D des joueurs ────────────────────────────── */}
+      {/* ── Pastilles de position des joueurs (discrètes) ─────────── */}
       {players.map((p) => {
         const pos = playerPos(p);
         return (
-          <PlayerTrain
-            key={p.id}
-            x={pos.x}
-            y={pos.y}
-            color={p.color}
-            name={p.name}
-            isSelf={p.id === selfId}
-            finished={!!p.finishedAt}
-          />
+          <g key={p.id} transform={`translate(${pos.x} ${pos.y})`}>
+            <circle r={6} fill={p.color} stroke="#FFFFFF" strokeWidth={2} />
+            {p.id === selfId && (
+              <circle
+                r={10}
+                fill="none"
+                stroke={p.color}
+                strokeWidth={1.5}
+                opacity={0.6}
+              />
+            )}
+          </g>
         );
       })}
     </svg>
