@@ -16,6 +16,8 @@ interface PlayerTrainProps {
   isSelf: boolean;
   finished?: boolean;
   hideLabel?: boolean;
+  /** Échelle visuelle du train (1 = taille standard). */
+  scale?: number;
 }
 
 /** Renvoie un hex éclairci (+) ou assombri (-) en gardant la teinte. */
@@ -47,7 +49,16 @@ type TrailSeg = { id: number; x1: number; y1: number; x2: number; y2: number };
  * - Effet de vitesse (lignes de speed)
  * - Rebond léger à l'arrêt (spring avec overshoot)
  */
-export function PlayerTrain({ x, y, color, name, isSelf, finished, hideLabel }: PlayerTrainProps) {
+export function PlayerTrain({
+  x,
+  y,
+  color,
+  name,
+  isSelf,
+  finished,
+  hideLabel,
+  scale = 1,
+}: PlayerTrainProps) {
   const mx = useMotionValue(x);
   const my = useMotionValue(y);
   const angle = useMotionValue(0);
@@ -148,7 +159,7 @@ export function PlayerTrain({ x, y, color, name, isSelf, finished, hideLabel }: 
       </AnimatePresence>
 
       {/* Le train (position animée) */}
-      <motion.g style={{ x: mx, y: my }}>
+      <motion.g style={{ x: mx, y: my, scale }}>
         {/* Ombre au sol (légère, ne tourne pas) */}
         <motion.ellipse
           cx={0}

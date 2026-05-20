@@ -213,38 +213,45 @@ function RoomContent({
         </AnimatePresence>
       </div>
 
-      {/* Bandeau course — animation des mini-métros */}
-      <RaceTrack
-        players={playersArray}
-        selfId={selfId}
-        totalStations={totalStations}
-        lineColor={linesById[room.config.lineId]?.color ?? "#0B0F1A"}
-      />
-
-      {/* Carte */}
-      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative min-h-[45vh]">
+      {/* Carte avec overlay de course en haut à gauche */}
+      <div className="bg-white rounded-2xl shadow-soft border border-black/5 overflow-hidden relative h-[42vh] min-h-[280px]">
         <RaceMap
           lineId={room.config.lineId}
           players={playersArray}
           selfId={selfId}
           hideUnknownNames
         />
+        <div className="absolute top-2 left-2 z-10 w-[210px] sm:w-[240px] pointer-events-none">
+          <RaceTrack
+            players={playersArray}
+            selfId={selfId}
+            totalStations={totalStations}
+            lineColor={linesById[room.config.lineId]?.color ?? "#0B0F1A"}
+            compact
+          />
+        </div>
       </div>
 
-      {/* Tableau de progression */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {/* Bandeau erreurs (compact, une ligne) */}
+      <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
         {playersArray.map((p) => (
-          <PlayerProgressBar
+          <span
             key={p.id}
-            name={p.name}
-            color={p.color}
-            found={p.foundStationIds.length}
-            total={totalStations}
-            errors={p.errors}
-            isSelf={p.id === selfId}
-            isWinner={room.winnerId === p.id}
-            finishedAt={p.finishedAt}
-          />
+            className={cn(
+              "px-2 py-1 rounded-full bg-white border shadow-soft inline-flex items-center gap-1.5",
+              p.id === selfId ? "border-ink/30" : "border-black/5"
+            )}
+          >
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: p.color }}
+            />
+            <span className="font-semibold text-ink">{p.name}</span>
+            {p.errors > 0 && (
+              <span className="text-red-500">· {p.errors} err.</span>
+            )}
+            {p.finishedAt && <span className="text-yellow-500">🏁</span>}
+          </span>
         ))}
       </div>
     </div>
