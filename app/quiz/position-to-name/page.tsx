@@ -419,11 +419,11 @@ export default function PositionToNamePage() {
         <AnimatePresence>
           {feedback && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, y: -4 }}
               className={cn(
-                "mx-3 mb-3 px-4 py-2 rounded-xl text-sm font-semibold",
+                "absolute left-3 right-3 top-full mt-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-soft pointer-events-none z-10",
                 feedback.kind === "ok" || feedback.kind === "found"
                   ? "bg-green-100 text-green-800"
                   : "bg-red-100 text-red-800"
