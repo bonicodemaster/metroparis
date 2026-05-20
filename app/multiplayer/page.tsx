@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useIdentity, generateRoomCode } from "@/lib/multiplayer/identity";
+import { isRemoteMultiplayerAvailable } from "@/lib/multiplayer/transport";
 import { PlayerAvatar } from "@/components/multiplayer/PlayerAvatar";
 import { cn } from "@/lib/utils/cn";
 
@@ -12,6 +13,7 @@ export default function MultiplayerLandingPage() {
   const { identity, setName, setColor, COLORS } = useIdentity();
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
+  const remoteOk = isRemoteMultiplayerAvailable();
 
   if (!identity) {
     return (
@@ -45,8 +47,10 @@ export default function MultiplayerLandingPage() {
           Course de métros entre amis
         </h1>
         <p className="text-ink-muted mb-8">
-          Crée une room, partage le code, et défiez-vous sur une ligne complète.
-          Tout en local : ouvre 2 onglets pour tester.
+          Crée une room, partage le code, et défiez-vous sur une ligne complète —
+          {remoteOk
+            ? " jouez depuis n'importe quel appareil grâce à Supabase Realtime."
+            : " configure Supabase pour jouer entre appareils."}
         </p>
       </motion.div>
 
@@ -124,13 +128,29 @@ export default function MultiplayerLandingPage() {
         {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
       </div>
 
-      <div className="mt-8 text-xs text-ink-muted bg-black/[0.03] rounded-xl p-4 leading-relaxed">
-        <p className="font-semibold text-ink mb-1">Mode local (par défaut)</p>
+      <div
+        className={cn(
+          "mt-8 text-xs rounded-xl p-4 leading-relaxed",
+          remoteOk
+            ? "bg-green-50 text-green-900 border border-green-200"
+            : "bg-yellow-50 text-yellow-900 border border-yellow-200"
+        )}
+      >
+        <p className="font-semibold mb-1">
+          {remoteOk ? "✓ Supabase Realtime activé" : "⚠ Supabase non configuré"}
+        </p>
         <p>
-          Le multijoueur utilise actuellement <code>BroadcastChannel</code> : les
-          joueurs doivent être sur le même navigateur (onglets multiples ou
-          fenêtres séparées). Pour jouer entre appareils différents, configure
-          Supabase Realtime — voir <code>README.md</code>.
+          {remoteOk
+            ? "Le multijoueur fonctionne entre appareils via WebSocket. Le code de room suffit pour rejoindre — aucune installation requise pour les invités."
+            : (
+              <>
+                Aucune clé Supabase détectée. Fallback : <code>BroadcastChannel</code>{" "}
+                (mêmes onglets uniquement). Renseigne{" "}
+                <code>NEXT_PUBLIC_SUPABASE_URL</code> et{" "}
+                <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> dans{" "}
+                <code>.env.local</code> — voir <code>README.md</code>.
+              </>
+            )}
         </p>
       </div>
     </div>

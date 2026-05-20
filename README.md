@@ -6,16 +6,49 @@ Application web d'apprentissage du métro parisien, inspirée de **Seterra**, **
 
 ```bash
 npm install
+cp .env.example .env.local   # puis renseigner les clés Supabase
 npm run dev
 ```
 
 Ouvrir http://localhost:3000
 
+## 🌐 Multijoueur (Supabase Realtime)
+
+Le multijoueur fonctionne entre appareils via **broadcast WebSocket** Supabase
+(pas de table, pas de schéma — l'état est échangé en RAM via des événements).
+
+### Setup (≈ 2 min)
+
+1. Crée un projet gratuit sur https://supabase.com (Free tier suffit largement).
+2. **Project Settings → API** : copie `Project URL` et `anon public` key.
+3. Crée `.env.local` à la racine :
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+   ```
+4. **Realtime → Settings** : vérifier que *Broadcast* est activé (par défaut OUI).
+5. Redémarrer `npm run dev`.
+
+Pas de SQL ni de RLS à configurer — on n'utilise que le canal `broadcast`,
+qui ne touche pas à la base de données.
+
+### Production (Vercel)
+
+Renseigne les mêmes variables dans **Project Settings → Environment Variables**
+de Vercel, puis redéploie. Les URL `/multiplayer/room/CODE` se partagent telles
+quelles, depuis n'importe quel appareil.
+
+### Fallback local
+
+Sans clés Supabase, l'app retombe automatiquement sur `BroadcastChannel` —
+mode local entre onglets d'un même navigateur (utile pour le dev).
+
 ## 🧱 Stack
 
-- **Next.js 14** (App Router) + **TypeScript**
+- **Next.js 15** (App Router) + **React 19** + **TypeScript**
 - **TailwindCSS** + **Framer Motion**
 - **Zustand** (persistance localStorage)
+- **Supabase Realtime** (multijoueur cross-device)
 - **SVG interactif** custom — pan/zoom, projection lat/lon → SVG
 
 ## 📦 Architecture
@@ -58,7 +91,7 @@ lib/
 | Quiz "ordre des stations" | Drag & drop | ⏳ Roadmap |
 | Mode "Ligne complète" | Réciter toutes les stations | ⏳ Roadmap |
 | Mode Examen | Évaluation complète multi-lignes | ⏳ Roadmap |
-| Multijoueur | Défis temps réel | ⏳ Roadmap |
+| Multijoueur | Course temps réel sur une ligne (Supabase Realtime) | ✅ |
 | Mode Histoire | Anecdotes, dates, origines | ⏳ Roadmap |
 | Audio | Prononciation | ⏳ Roadmap |
 | IA Coach | Plans de révision personnalisés | ⏳ Roadmap |
@@ -116,13 +149,12 @@ vercel
 ## 🗺️ Roadmap V2
 
 1. **Auth + sync cloud** (Supabase) — partager la progression entre appareils
-2. **Mode multijoueur** temps réel (Supabase Realtime)
-3. **Données complètes** depuis Île-de-France Mobilités (RER, Tramway, Transilien)
-4. **PWA + offline-first** (déjà majoritairement le cas grâce au localStorage)
-5. **Mode Histoire** — base de données d'anecdotes par station
-6. **Audio** — prononciation des stations
-7. **IA Coach** — analyse de faiblesses (faiblesses par ligne, par arrondissement)
-8. **Mobile natif** (React Native ou Capacitor)
+2. **Données complètes** depuis Île-de-France Mobilités (RER, Tramway, Transilien)
+3. **PWA + offline-first** (déjà majoritairement le cas grâce au localStorage)
+4. **Mode Histoire** — base de données d'anecdotes par station
+5. **Audio** — prononciation des stations
+6. **IA Coach** — analyse de faiblesses (faiblesses par ligne, par arrondissement)
+7. **Mobile natif** (React Native ou Capacitor)
 
 ## 📜 Licence
 

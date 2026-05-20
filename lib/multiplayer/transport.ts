@@ -1,26 +1,26 @@
 "use client";
 
+import { createClient, type RealtimeChannel, type SupabaseClient } from "@supabase/supabase-js";
 import type { MpEvent } from "./types";
 
 /**
  * Transport temps réel pour le multijoueur.
  *
- * Abstraction qui permet de swapper entre :
- *  - BroadcastChannelTransport : local (entre onglets du même navigateur)
- *  - SupabaseRealtimeTransport : remote (à activer en V2, voir README)
+ * Deux implémentations :
+ *  - SupabaseRealtimeTransport : remote, cross-device (par défaut si env configuré)
+ *  - BroadcastChannelTransport : local, multi-tabs (fallback uniquement)
  *
  * Tous les clients d'une même room écoutent le même channel et émettent
- * des événements typés `MpEvent`.
+ * des événements typés `MpEvent` (mode "broadcast" — pas de persistance).
  */
 export interface Transport {
   send(event: MpEvent): void;
   subscribe(handler: (e: MpEvent) => void): () => void;
   close(): void;
-  /** Type d'implémentation (debug/UI). */
   readonly kind: "broadcast-channel" | "supabase";
 }
 
-/* ─── Implémentation BroadcastChannel (multi-tabs, sans backend) ─────────── */
+/* ─── BroadcastChannel (fallback local, dev sans Supabase) ────────────────── */
 
 class BroadcastChannelTransport implements Transport {
   readonly kind = "broadcast-channel" as const;
@@ -50,47 +50,59 @@ class BroadcastChannelTransport implements Transport {
   }
 }
 
-/* ─── Stub Supabase Realtime (V2) ────────────────────────────────────────── */
+/* ─── Supabase Realtime (cross-device, principal) ─────────────────────────── */
 
-/**
- * Implémentation à activer en branchant `@supabase/supabase-js`.
- *
- * Étapes pour passer en remote :
- *  1. `npm install @supabase/supabase-js`
- *  2. Créer un projet sur supabase.com
- *  3. Renseigner dans `.env.local` :
- *       NEXT_PUBLIC_SUPABASE_URL=...
- *       NEXT_PUBLIC_SUPABASE_ANON_KEY=...
- *  4. Décommenter le code ci-dessous et recompiler.
- *
- * Le pattern utilise les canaux Realtime de Supabase en mode "broadcast"
- * (sans table) — l'état est partagé via les événements, pas persisté.
- */
-/*
-import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
+// Singleton client : un seul WebSocket pour toute l'app.
+let supabaseSingleton: SupabaseClient | null = null;
+function getSupabase(): SupabaseClient {
+  if (supabaseSingleton) return supabaseSingleton;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error(
+      "Supabase non configuré. Renseigne NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local"
+    );
+  }
+  supabaseSingleton = createClient(url, key, {
+    realtime: { params: { eventsPerSecond: 30 } },
+  });
+  return supabaseSingleton;
+}
 
 class SupabaseRealtimeTransport implements Transport {
   readonly kind = "supabase" as const;
   private channel: RealtimeChannel;
   private handlers = new Set<(e: MpEvent) => void>();
+  private ready = false;
+  private outbox: MpEvent[] = [];
 
   constructor(roomCode: string) {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getSupabase();
     this.channel = supabase.channel(`metro-mp:${roomCode}`, {
-      config: { broadcast: { self: false } },
+      config: { broadcast: { self: false, ack: false } },
     });
     this.channel
       .on("broadcast", { event: "mp" }, (payload) => {
         const data = payload.payload as MpEvent;
         this.handlers.forEach((h) => h(data));
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          this.ready = true;
+          // Flush des messages envoyés avant que le channel ne soit prêt.
+          const pending = this.outbox.splice(0);
+          for (const ev of pending) {
+            this.channel.send({ type: "broadcast", event: "mp", payload: ev });
+          }
+        }
+      });
   }
 
   send(event: MpEvent): void {
+    if (!this.ready) {
+      this.outbox.push(event);
+      return;
+    }
     this.channel.send({ type: "broadcast", event: "mp", payload: event });
   }
 
@@ -101,20 +113,33 @@ class SupabaseRealtimeTransport implements Transport {
 
   close(): void {
     this.handlers.clear();
+    this.outbox = [];
     this.channel.unsubscribe();
   }
 }
-*/
 
-/** Factory : choisit le transport selon l'env. */
-export function createTransport(roomCode: string): Transport {
-  const hasSupabase =
+/* ─── Factory ─────────────────────────────────────────────────────────────── */
+
+function hasSupabaseEnv(): boolean {
+  return (
     typeof process !== "undefined" &&
     !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (hasSupabase) {
-    // return new SupabaseRealtimeTransport(roomCode);
-    // (laissé en stub — voir bloc commenté plus haut)
+    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+}
+
+export function createTransport(roomCode: string): Transport {
+  if (hasSupabaseEnv()) {
+    return new SupabaseRealtimeTransport(roomCode);
+  }
+  if (typeof window !== "undefined") {
+    console.warn(
+      "[multijoueur] Supabase non configuré — fallback BroadcastChannel (même navigateur uniquement)."
+    );
   }
   return new BroadcastChannelTransport(roomCode);
+}
+
+export function isRemoteMultiplayerAvailable(): boolean {
+  return hasSupabaseEnv();
 }
