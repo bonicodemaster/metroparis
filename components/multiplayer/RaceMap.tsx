@@ -75,11 +75,47 @@ export function RaceMap({
     return points[idx] ?? points[0];
   };
 
+  // Zoom : viewBox calculé pour englober la ligne active avec une marge,
+  // au lieu d'afficher toute la zone de Paris. Garde le ratio du SVG.
+  const viewBoxStr = useMemo(() => {
+    if (points.length === 0) {
+      return `0 0 ${SVG_VIEWBOX.width} ${SVG_VIEWBOX.height}`;
+    }
+    const xs = points.map((p) => p.x);
+    const ys = points.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    // Marge proportionnelle : on garde un peu de contexte autour de la ligne
+    const padFactor = 0.18;
+    const w0 = Math.max(40, maxX - minX);
+    const h0 = Math.max(40, maxY - minY);
+    const pad = Math.max(w0, h0) * padFactor;
+    let bx = minX - pad;
+    let by = minY - pad;
+    let bw = w0 + pad * 2;
+    let bh = h0 + pad * 2;
+    // Conserve le ratio du SVG d'origine pour éviter la déformation
+    const targetAspect = SVG_VIEWBOX.width / SVG_VIEWBOX.height;
+    const bAspect = bw / bh;
+    if (bAspect > targetAspect) {
+      const newH = bw / targetAspect;
+      by -= (newH - bh) / 2;
+      bh = newH;
+    } else {
+      const newW = bh * targetAspect;
+      bx -= (newW - bw) / 2;
+      bw = newW;
+    }
+    return `${bx.toFixed(1)} ${by.toFixed(1)} ${bw.toFixed(1)} ${bh.toFixed(1)}`;
+  }, [points]);
+
   if (!line || points.length === 0) return null;
 
   return (
     <svg
-      viewBox={`0 0 ${SVG_VIEWBOX.width} ${SVG_VIEWBOX.height}`}
+      viewBox={viewBoxStr}
       className="w-full h-full bg-cream"
     >
       {/* ── Repères géographiques ─────────────────────────────────── */}
